@@ -1,0 +1,198 @@
+import java.awt.*;
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.logging.Handler;
+
+public class FtpServer {
+
+    private static final int sPort = 4444;
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("The server is running.");
+        ServerSocket listener = new ServerSocket(sPort);
+        int clientNum = 1;
+        try {
+            while (true) {
+                new Server(listener.accept()).start();
+                System.out.println("Client " + clientNum + " is connected!");
+                clientNum++;
+            }
+        } finally {
+            listener.close();
+        }
+
+    }
+
+
+    public static class Server extends Thread {
+        public static Socket sr_soc = null;
+        public static ServerSocket servsoc = null;
+        public static int port = 4444;
+        String ftpclient = "ftpclient 127.0.0.1 4444";
+        String Address = "127.0.0.1";
+        String UserName = "sk";
+        String Password = "qw";
+        private static FileInputStream sr_fis = null;
+        static PrintStream sr_pt;
+        static Scanner sr_sc;
+        static String msg = "";
+        static String message = "";
+
+        static List<String> names = new ArrayList<>();
+
+        private static FileOutputStream sr_fos = null;
+        static String sr_fileName = "";
+
+        static DataOutputStream sr_dos = null;
+        static DataInputStream sr_dis = null;
+
+
+        public Server(Socket connection) {
+            this.sr_soc = connection;
+        }
+
+        public Server() {
+
+        }
+
+        public void run() {
+            try {
+
+                //    public static void main throws Exception {
+                // servsoc = new ServerSocket(port);
+                System.out.println("SERVER STARTED");
+                System.out.println("WAITING FOR CLIENT");
+
+
+                //sr_soc = servsoc.accept();
+                System.out.println("CLIENT ACCEPTED");
+                sr_dis = new DataInputStream(sr_soc.getInputStream());
+                sr_dos = new DataOutputStream(sr_soc.getOutputStream());
+
+                sr_sc = new Scanner(sr_soc.getInputStream());
+                sr_pt = new PrintStream(sr_soc.getOutputStream());
+
+                while (true) {
+                    System.out.println("WAITING FOR COMMAND");
+                    msg = sr_sc.nextLine();
+
+                    if (msg.contentEquals("get")) {
+                        try {
+                            send();
+                            continue;
+                        } catch (NullPointerException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (msg.contentEquals("upload")) {
+                        try {
+                            save();
+                            continue;
+                        } catch (NullPointerException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (msg.contentEquals("dir")) {
+                        try {
+                            dir();
+                            continue;
+                        } catch (NullPointerException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (msg.contentEquals("exit")) {
+                        System.out.println("\tEXIT COMMAND RECEIVED");
+                        System.exit(1);
+                    } else {
+                        System.out.println("INVALID COMMAND");
+                    }
+
+                }
+
+            } catch (Exception e) {
+
+            }
+
+        }
+
+        public static void save ()
+        {
+            try {
+                sr_fileName = sr_sc.nextLine();
+
+                System.out.println(sr_fileName);
+
+
+                sr_fos = new FileOutputStream(System.getProperty("user.home") + "/Desktop/Server/" + sr_fileName);
+                int count;
+                String Temp;
+                do {
+                    Temp = sr_dis.readUTF();
+                    count = Integer.parseInt(Temp);
+                    if (count != -1) {
+                        sr_fos.write(count);
+                    }
+                } while (count != -1);
+                sr_fos.close();
+                System.out.println("FILE UPLOADED SUCCESSFULLY");
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+
+            }
+        }
+
+
+        public static void send () {
+            while(true) {
+                try {
+                    File sr_myFile = null;
+                    sr_fileName = sr_sc.nextLine();
+                    // sends file to the client
+                    sr_myFile = new File(System.getProperty("user.home") + "/Desktop/Server/" + sr_fileName);
+                    if (!sr_myFile.exists()) {
+                        sr_dos.writeUTF("File Not Found");
+                        //return;
+                    } else {
+                        sr_dos.writeUTF("READY");
+
+
+                        sr_fis = new FileInputStream(sr_myFile);
+                        int count;
+                        do {
+                            count = sr_fis.read();
+                            sr_dos.writeUTF(String.valueOf(count));
+                        }
+                        while (count != -1);
+                        sr_fis.close();
+                        System.out.println("FILE DOWNLOADED.");
+                    }
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                } catch (Exception e) {
+
+                }
+
+            }
+        }
+
+
+
+        public static void dir () {
+
+            File folder = new File(System.getProperty("user.home") + "/Desktop/Server/");
+
+            File[] files = folder.listFiles();
+
+            for (File file : files) {
+                names.add(file.getName());
+                names.add("\n");
+            }
+
+            System.out.println("LIST OF FILES PRINTED");
+
+
+        }
+    }
+}
