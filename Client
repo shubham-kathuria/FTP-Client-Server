@@ -1,0 +1,220 @@
+import java.io.*;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+public class Client {
+    public static Socket cl_soc = null;
+    public static FtpServer.Server ser = new FtpServer.Server();
+    static Scanner sc = new Scanner(System.in);
+    private static FileOutputStream fos = null;
+    static PrintStream cl_pt;
+    static Scanner cl_sc;
+    static String line;
+    static String filename;
+
+    private static FileInputStream cl_fis = null;
+    static DataOutputStream cl_dos;
+    static DataInputStream cl_dis;
+    static List<String> names = new ArrayList<>();
+
+
+    static void upload() throws Exception {
+        try {
+            File cl_myFile = null;
+            int flag = 0;
+            while (flag == 0) {
+                System.out.println("ENTER FILE NAME");
+                BufferedReader UserInput = new BufferedReader(new InputStreamReader(System.in));
+
+                filename = UserInput.readLine();
+
+                cl_myFile = new File(System.getProperty("user.home") + "/Desktop/" + filename);
+                if (cl_myFile.exists()) {
+                    cl_pt.println(filename);
+                    flag = 1;
+                } else {
+                    System.out.println("FILE NOT FOUND");
+                }
+
+            }
+
+            cl_fis = new FileInputStream(cl_myFile);
+            int count;
+            do {
+                count = cl_fis.read();
+                cl_dos.writeUTF(String.valueOf(count));
+            }
+            while (count != -1);
+            cl_fis.close();
+            System.out.println("FILE UPLOADED");
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    static void download() throws IOException {
+        try {
+            int flag = 0;
+            while (flag == 0){
+                System.out.println("ENTER FILE NAME");
+                BufferedReader UserInput = new BufferedReader(new InputStreamReader(System.in));
+                filename = UserInput.readLine();
+                cl_pt.println(filename);
+                // message= cl_sc.nextLine();
+                String msgFromServer = cl_dis.readUTF();
+
+                if (msgFromServer.compareTo("FILE NOT FOUND") == 0) {
+                    System.out.println("File not found on FtpServer ...");
+                    //return;
+                } else if (msgFromServer.compareTo("READY") == 0) {
+                    //cl_pt.println(filename);
+                    flag = 1;
+                }
+            }
+
+
+            // receive file
+            fos = new FileOutputStream(System.getProperty("user.home") + "/Desktop/Client/" + filename);
+            int count;
+            String Temp;
+            do {
+                Temp = cl_dis.readUTF();
+                count = Integer.parseInt(Temp);
+                if (count != -1) {
+                    fos.write(count);
+                }
+            } while (count != -1);
+            fos.close();
+            System.out.println("FILE DOWNLOADED SUCCESSFULLY");
+
+
+    } catch(
+    NullPointerException e)
+
+    {
+        e.printStackTrace();
+    }
+
+}
+
+    public static void main(String[] args) throws Exception {
+        BufferedReader UserInput = new BufferedReader(new InputStreamReader(System.in));
+        String address = "";
+        String username;
+        String password;
+        int port = 0;
+        String[] arryOfString = new String[3];
+
+
+        do {
+            System.out.println("CLIENT STARTED");
+            System.out.println("ENTER COMMAND");
+            line = UserInput.readLine();
+             if(!line.startsWith("ftpclient")) {
+                System.out.println("INVALID COMMAND");
+            }
+             if(line.equals("get") || line.equals("dir") || line.equals("upload")){
+                 System.out.println("CONNECTION IS NOT ESTABLISHED");
+
+             }
+
+        }while (!line.startsWith("ftpclient"));
+
+        arryOfString = line.split(" ", 5);
+        address = arryOfString[1];
+        port = Integer.parseInt(arryOfString[2]);
+
+
+ while (!address.contentEquals(ser.Address) || port != ser.port)
+        {
+            System.out.println("INVALID ADDRESS OR PORT");
+            System.out.println("CLIENT STARTED");
+            System.out.println("ENTER COMMAND");
+
+            String cmd = UserInput.readLine();
+            arryOfString = cmd.split(" ", 5);
+            address = arryOfString[1];
+            port = Integer.parseInt(arryOfString[2]);
+        }
+
+        do {
+            System.out.println("Enter USERNAME");
+            username = sc.next();
+            System.out.println("Enter PASSWORD");
+            password = sc.next();
+            if (!username.contentEquals(ser.UserName) || !password.contentEquals(ser.Password))
+                System.out.println("INVALID USERNAME OR PASSWORD");
+        }   while (!username.contentEquals(ser.UserName) || !password.contentEquals(ser.Password));
+
+                    cl_soc = new Socket(address, port);
+                    System.out.println("SOCKET CONNECTED");
+
+
+
+
+            cl_dis=new DataInputStream(cl_soc.getInputStream());
+            cl_dos=new DataOutputStream(cl_soc.getOutputStream());
+            cl_pt = new PrintStream(cl_soc.getOutputStream());
+            cl_sc = new Scanner(cl_soc.getInputStream());
+
+            // string to read message from input
+
+
+            // keep reading until "Over" is input
+            while (true) {
+                System.out.println("ENTER COMMAND");
+                line = sc.next();
+                cl_pt.println(line);
+                if (line.equals("get")) {
+                    try {
+
+                    download();
+                    }catch (NullPointerException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else  if (line.equals("upload")) {
+                    try {
+                        upload();
+                    } catch (NullPointerException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else if (line.equals("dir")) {
+                   try {
+                       File folder = new File(System.getProperty("user.home") + "/Desktop/Server/");
+
+
+                    File[] files = folder.listFiles();
+
+                    for (File file : files)
+                    {
+                        names.add(file.getName());
+                        names.add("\n");
+                    }
+
+                    System.out.println(names);
+                }catch (NullPointerException e){
+                       e.printStackTrace();
+                   }
+                }
+
+                else if(line.equals("exit")){
+                    System.exit(1);
+                }
+                else if (line.startsWith("ftpclient")){
+                    System.out.println("ALREADY CONNECTED TO THE SERVER");
+                }
+                else{
+                    System.out.println("INVALID COMMAND");
+                }
+
+            }
+
+
+        }
+
+    }
