@@ -1,0 +1,27 @@
+*
+*
+*
+
+
+Directory of the Server is a folder named "Server" on the Desktop.
+Directory of the Client is a folder named Clienton the Desktop.
+To Upload a file there should be a file on the desktop.
+
+Login Credentials:
+Address- 127.0.0.1
+Port- 4444
+UserName - sk
+Password - qw
+
+When the program Start it will ask to enter a command, to login you have to enter the following command
+
+"ftpclient "Address" "Port"".
+
+After the ftp Command the program will ask for the Username and Password and after this Server will be connected.
+
+You can use the get, upload, dir comands to download a file from the server, upload a file to the server and to see the names of the file on the server respectively.
+
+THANKYOU.
+Shubham Kathuria
+3393-9680
+
